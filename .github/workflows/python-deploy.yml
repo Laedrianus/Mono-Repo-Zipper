@@ -8,16 +8,31 @@ on:
 jobs:
   run-python:
     runs-on: ubuntu-latest
+
     steps:
+      # 1. Kodları GitHub'dan çek
       - uses: actions/checkout@v3
+
+      # 2. Python kurulumu
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+
+      # 3. Gerekli kütüphaneleri yükle (varsa)
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      # 4. Output klasörünü oluştur (yoksa)
+      - name: Create output folder
+        run: mkdir -p output
+
+      # 5. Python scriptini çalıştır
       - name: Run script
         run: python main.py
+
+      # 6. Çıktıyı upload et (varsa)
       - name: Upload output
         uses: actions/upload-artifact@v4
         with:

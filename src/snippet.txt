@@ -1,0 +1,112 @@
+nix Wrap# /flake.nix
+{
+  description = "A full-stack monorepo with Rust, Next.js, Solidity, and WASM";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+    rust-overlay.url = "github:oxalica/rust-overlay";
+  };
+
+  outputs = { self, nixpkgs, flake-utils, rust-overlay }:
+    flake-utils.lib.eachDefaultSystem (system:
+        overlays = [ (import rust-overlay) ];
+        pkgs = import nixpkgs {
+          inherit system overlays;
+        };
+
+        # Rust toolchain version
+        rustVersion = pkgs.rust-bin.stable."1.79.0";
+
+        # Node.js version
+        nodejsVersion = 20;
+
+      {
+        devShells.default = pkgs.mkShell {
+          buildInputs = with pkgs; [
+            # Rust & Cargo
+
+            # WebAssembly
+
+            # Node.js, pnpm
+            (pkgs.nodejs-20_x.withPackages (ps: [ ps.pnpm ]))
+
+            # Solidity & Foundry
+
+            # Docker tools for container management
+
+            # Utility tools
+          ];
+
+          # Environment variables for Rust
+          shellHook = ''
+            export RUST_SRC_PATH="${rustVersion}/lib/rustlib/src/rust/library"
+            export OPENSSL_DIR="${pkgs.openssl.dev}"
+            export PKG_CONFIG_PATH="${pkgs.openssl.dev}/lib/pkgconfig"
+            echo " Nix development environment loaded."
+          '';
+        };
+      });
+}
+/flake.lock
+Run nix flake lock --update-input nixpkgs in your terminal at the project root to generate this file. It will lock the specific versions of all dependencies.
+/package.json
+This file manages the TypeScript/JavaScript workspace using pnpm.
+ code Wrap// /package.json
+{
+  "name": "fullstack-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter frontend dev",
+    "build": "pnpm --filter frontend build",
+    "start": "pnpm --filter frontend start",
+    "lint": "pnpm --filter frontend lint",
+    "test": "pnpm --filter frontend test && pnpm --filter backend test && pnpm --filter contracts test"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  },
+  "packageManager": "pnpm@9.1.0"
+}
+/Cargo.toml
+This is the workspace manifest for all Rust projects.
+toml Wrap# /Cargo.toml
+resolver = "2"
+members = [
+    "apps/backend",
+    "packages/wasm-lib"
+
+tokio = { version = "1.37.0", features = ["full"] }
+axum = "0.7.5"
+serde = { version = "1.0.198", features = ["derive"] }
+serde_json = "1.0.116"
+tower-http = { version = "0.5.2", features = ["cors"] }
+/docker-compose.yml
+This file orchestrates the backend and frontend services using Docker.
+yaml Wrap# /docker-compose.yml
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - RUST_LOG=info
+    networks:
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+    depends_on:
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Monorepo ZIP Generator</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="page-center">
+    <div class="card">
+      <h1 class="title">Monorepo ZIP Generator</h1>
+      <p class="subtitle">--- filename.ext --- formatında kod yapıştırın (büyük A5 düzeni).</p>
+
+      <form id="form" onsubmit="onSubmit(event)">
+        <textarea id="code" class="a5-textarea" placeholder="--- filename.ext --- formatında kod yapıştırın..."></textarea>
+        <div class="controls">
+          <button type="submit" class="btn primary">ZIP Oluştur</button>
+          <a id="downloadLink" class="btn success hidden" download="monorepo.zip">ZIP İndir</a>
+        </div>
+      </form>
+
+      <div id="msg" class="msg"></div>
+      <footer class="foot">Python Flask (Sunucu tarafı zip) — doğrudan indirilebilir (serverless uyumlu). </footer>
+    </div>
+  </main>
+
+<script>
+async function onSubmit(e) {
+  e.preventDefault();
+  const code = document.getElementById('code').value || "";
+  document.getElementById('msg').textContent = "ZIP oluşturuluyor...";
+  // call API
+  try {
+    const res = await fetch('/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      document.getElementById('msg').textContent = 'Hata: ' + txt;
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.getElementById('downloadLink');
+    link.href = url;
+    link.classList.remove('hidden');
+    document.getElementById('msg').textContent = "ZIP hazır. İndirmek için ZIP İndir butonuna tıklayın.";
+  } catch (err) {
+    document.getElementById('msg').textContent = 'Sunucu hatası: ' + err;
+  }
+}
+</script>
+
+</body>
+</html>
